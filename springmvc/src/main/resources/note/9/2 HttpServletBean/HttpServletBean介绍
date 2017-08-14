@@ -28,5 +28,6 @@
         }
     }
 
-    可以看到，在HttpServletBean的init中，首先将Servlet中配置的参数使用BeanWrapper设置到DispatcherServlet的相关属性，然后调用
-模板方法initServletBean,子类就通过这个方法初始化。
+    可以看到，在HttpServletBean的init中，
+    01 将Servlet中配置的参数使用BeanWrapper设置到DispatcherServlet的相关属性，
+    02调用模板方法initServletBean,子类就通过这个方法初始化。
