@@ -1,0 +1,32 @@
+    1.Servlet创建时可以直接调用init方法。
+    //org.springframework.web.servlet.HttpServletBean
+    public final void init() throws ServletException{
+        if(logger.isDebugEnabled){
+            logger.debug("Initializing servlet '"+getServletName()+"'");
+        }
+
+        try{
+            //将Servlet中配置的参数封装到pvs变量中，requiredProperties为必需参数，如果没有配置将报异常
+            propertyValues pvs = new ServletConfigPropertyValues(getServletConfig(),this.requiredProperties);
+            BeanWrapper bw = PropertyAccessorFactory.forBeanPropertyAccess(this);
+            ResourceLoader resourceLoader = new ServletContextResourceLoader(getServletContext());
+            bw.registerCustomEditor(Resource.class,new ResourceEditor(resourceLoader,getEnvironment()));
+
+            //模板方法，可以在子类调用，做一些初始化工作。bw代表DispatcherServlet
+            initBeanWrapper(bw);
+            bw.setPropertyValues(pvs,true);
+        }catch(BeansException ex){
+            logger.error("Failed to set bean properties on servlet "+getServletName()+"'",ex);
+            throw ex;
+        }
+
+        //模板方法，子类初始化的入口方法
+        initServletBean();
+
+        if(logger.isDebugEnabled){
+            logger.debug("Servlet '"+getServletName()+"'configured successfully");
+        }
+    }
+
+    可以看到，在HttpServletBean的init中，首先将Servlet中配置的参数使用BeanWrapper设置到DispatcherServlet的相关属性，然后调用
+模板方法initServletBean,子类就通过这个方法初始化。
