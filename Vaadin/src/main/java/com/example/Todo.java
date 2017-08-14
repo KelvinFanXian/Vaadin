@@ -14,7 +14,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 
 /**
- * @author Kelvin范显
+ * @author Kelvin范显T
  * @createDate 2017年08月14日
  */
 @Entity
