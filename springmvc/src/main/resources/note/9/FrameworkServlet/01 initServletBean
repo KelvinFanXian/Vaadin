@@ -1,0 +1,42 @@
+    从HttpServletBean中可知，FrameworkServlet的初始化入口方法应该是initServlet，其代码如下：
+    //org.springframework.web.servlet.FrameworkServlet
+    /**
+     * Overridden method of {@link HttpServletBean}, invoked after any bean properties
+     * have been set. Creates this servlet's WebApplicationContext.
+     */
+    @Override
+    protected final void initServletBean() throws ServletException {
+        getServletContext().log("Initializing Spring FrameworkServlet '" + getServletName() + "'");
+        if (this.logger.isInfoEnabled()) {
+            this.logger.info("FrameworkServlet '" + getServletName() + "': initialization started");
+        }
+        long startTime = System.currentTimeMillis();
+
+        try {
+            this.webApplicationContext = initWebApplicationContext();
+            initFrameworkServlet();
+        }
+        catch (ServletException ex) {
+            this.logger.error("Context initialization failed", ex);
+            throw ex;
+        }
+        catch (RuntimeException ex) {
+            this.logger.error("Context initialization failed", ex);
+            throw ex;
+        }
+
+        if (this.logger.isInfoEnabled()) {
+            long elapsedTime = System.currentTimeMillis() - startTime;
+            this.logger.info("FrameworkServlet '" + getServletName() + "': initialization completed in " +
+                    elapsedTime + " ms");
+        }
+    }
+
+    可以看到这里的核心代码只有两句：
+        一句用于初始化ApplicationContext，
+        另一句用于初始化FrameworkServlet（initFrameworkServlet（）是模板方法，子类可以覆盖后做一些初始化工作）
+
+    这两句代码如下：
+        this.webApplicationContext = initWebApplicationContext();
+        initFrameworkServlet();
+    可见FrameworkServlet在构建的过程中的主要作用就是初始化了WebApplicationContext。
