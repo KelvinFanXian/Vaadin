@@ -1,0 +1,48 @@
+    //org.springframework.web.servlet.DispatcherServlet
+    protected <T> T getDefaultStrategy(ApplicationContext context, Class<T> strategyInterface) {
+        List<T> strategies = getDefaultStrategies(context, strategyInterface);
+        if (strategies.size() != 1) {
+            throw new BeanInitializationException(
+                    "DispatcherServlet needs exactly 1 strategy for interface [" + strategyInterface.getName() + "]");
+        }
+        return strategies.get(0);
+    }
+
+    protected <T> List<T> getDefaultStrategies(ApplicationContext context, Class<T> strategyInterface) {
+        String key = strategyInterface.getName();
+        //从defaultStrategies中获取所需策略的类型
+        String value = defaultStrategies.getProperty(key);
+        if (value != null) {
+            //如果有多个默认值，以逗号分割为数组
+            String[] classNames = StringUtils.commaDelimitedListToStringArray(value);
+            List<T> strategies = new ArrayList<T>(classNames.length);
+            //按获取到的类型初始化策略
+            for (String className : classNames) {
+                try {
+                    Class<?> clazz = ClassUtils.forName(className, DispatcherServlet.class.getClassLoader());
+                    Object strategy = createDefaultStrategy(context, clazz);
+                    strategies.add((T) strategy);
+                }
+                catch (ClassNotFoundException ex) {
+                    throw new BeanInitializationException(
+                            "Could not find DispatcherServlet's default strategy class [" + className +
+                                    "] for interface [" + key + "]", ex);
+                }
+                catch (LinkageError err) {
+                    throw new BeanInitializationException(
+                            "Error loading DispatcherServlet's default strategy class [" + className +
+                                    "] for interface [" + key + "]: problem with class file or dependent class", err);
+                }
+            }
+            return strategies;
+        }
+        else {
+            return new LinkedList<T>();
+        }
+    }
+
+    可以看到getDefaultStrategy中调用了getDefaultStrategist，后者返回的是List，
+    这是因为HandlerMapping等组件可以有多个，
+    所以定义了getDefaultStrategies方法，
+    getDefaultStrategy直接调用了getDefaultStrategies并返回返回值的第一个结果。
+
