@@ -1,0 +1,36 @@
+    onRefresh方法是DispatcherServlet的入口方法。onRefresh中简单的调用了initStrategies，
+    在initStrategies中调用了９个初始化方法：
+    //org.springframework.web.servlet.DispatcherServlet
+    @Override
+    protected void onRefresh(ApplicationContext context) {
+        initStrategies(context);
+    }
+
+    protected void initStrategies(ApplicationContext context) {
+        initMultipartResolver(context);
+        initLocaleResolver(context);
+        initThemeResolver(context);
+        initHandlerMappings(context);
+        initHandlerAdapters(context);
+        initHandlerExceptionResolvers(context);
+        initRequestToViewNameTranslator(context);
+        initViewResolvers(context);
+        initFlashMapManager(context);
+    }
+
+    为什么不直接将initStrategies的方法体直接写在onRefresh中？
+    主要是分层的原因：
+        onRefresh是用来刷新容器的，
+        Strategies用来初始化一些策略组件。
+
+    如果把initStrategies里面的代码直接写道onRefresh里面:
+        01 如果在onRefresh中想添加别的功能，就会没有将其单独写一个方法出来清晰；
+        02 如果在别的地方也需要调用initStrategies方法（如修改一些策略后要热部署），但initStrategies没有独立出来，
+           就只能调用onRefresh,那样在onRefresh增加了新功能的时候就麻烦了。
+        03 单独将initStrategies写出来还可以被子类覆盖，使用新的模式进行初始化。
+
+
+
+
+
+
