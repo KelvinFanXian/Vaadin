@@ -1,0 +1,27 @@
+    initStrategies的具体内容非常简单，就是初始化的９个组件，下面以LocaleResolver为例来分析具体的初始化方式：
+
+    //org.springframework.web.servlet.DispatcherServlet
+    private void initLocaleResolver(ApplicationContext context) {
+        try {
+            //在context中获取　
+            this.localeResolver = context.getBean(LOCALE_RESOLVER_BEAN_NAME, LocaleResolver.class);
+            if (logger.isDebugEnabled()) {
+                logger.debug("Using LocaleResolver [" + this.localeResolver + "]");
+            }
+        }
+        catch (NoSuchBeanDefinitionException ex) {
+            // We need to use the default.
+            //使用默认组件
+            this.localeResolver = getDefaultStrategy(context, LocaleResolver.class);
+            if (logger.isDebugEnabled()) {
+                logger.debug("Unable to locate LocaleResolver with name '" + LOCALE_RESOLVER_BEAN_NAME +
+                        "': using default [" + this.localeResolver + "]");
+            }
+        }
+    }
+
+    初始化方式分两部：
+        01 通过context.getBean在容器里面按注册时的名称或类型进行查找，所以在Spring MVC的配置文件中只需要配置相应类型的组件，
+    容器就可以自动找到。
+        02 如果找不到，就调用getDefaultStrategy按照类型获取默认的组件。需要注意的是，这里的context指的是frameworkServlet中
+    创建的WebApplicationContext，而不是ServletContext。
