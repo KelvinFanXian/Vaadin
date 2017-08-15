@@ -29,13 +29,13 @@
 
      }
 
-     NamespaceHandlerSupport并没有做具体的解析工作，而是定义了三个处理器parse,decorators,attributeDecorators,
+     NamespaceHandlerSupport并没有做具体的解析工作，而是定义了三个处理器 parse,decorators,attributeDecorators,
      分别用于处理解析工作、处理标签类型、处理属性类型的装饰。
      接口的parse和decorate方法的执行方式是先找到相应的处理器，然后进行处理。
      具体的处理由子类实现，然后注册到NamespaceHandlerSupport上面。
 
-     所以要定义一个命名空间的解析器，之需要在init中定义相应的parse,decorate,attributeDecorators并注册到NamespaceHandlerSupport
-     上面。下面是NamespaceHandler-Support的代码以及解析mvc命名空间的NvcNamespaceHandler的代码：
+     所以要定义一个命名空间的解析器，只需要在init中定义相应的 parse,decorate,attributeDecorators并注册到NamespaceHandlerSupport
+     上面。下面是NamespaceHandlerSupport的代码以及解析mvc命名空间的NvcNamespaceHandler的代码：
 
      //org.springframework.beans.factory.xml.NamespaceHandlerSupport
      public abstract class NamespaceHandlerSupport implements NamespaceHandler {
