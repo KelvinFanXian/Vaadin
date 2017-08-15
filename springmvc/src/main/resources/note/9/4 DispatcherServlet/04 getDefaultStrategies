@@ -1,0 +1,69 @@
+    getDefaultStrategies中实际执行创建的方法是ClassUtils.forName,它需要的参数时className,
+    所以最重要的是看className怎么来的，找到了className的来源，也就可以理解默认初始化方式。
+
+    className<--classNames<--value<--defaultStrategies.getProperty(key)。　
+    所以关键点就在defaultStrategies是一个静态属性，在static块中进行初始化的。
+
+    //org.springframework.web.servlet.DispatcherServlet
+    private static final Properties defaultStrategies;
+
+    static {
+        // Load default strategy implementations from properties file.
+        // This is currently strictly internal and not meant to be customized
+        // by application developers.
+        try {
+            ClassPathResource resource = new ClassPathResource(DEFAULT_STRATEGIES_PATH, DispatcherServlet.class);
+            defaultStrategies = PropertiesLoaderUtils.loadProperties(resource);
+        }
+        catch (IOException ex) {
+            throw new IllegalStateException("Could not load 'DispatcherServlet.properties': " + ex.getMessage());
+        }
+    }
+
+    defaultStrategies是DispatcherServlet类所在包下的　
+    DEFAULT_STRATEGIES_PATH文件里定义的属性，
+    DEFAULT_STRATEGIES_PATH的值是DispatcherServlet.properties。
+    所以defaultStrategies里面存放的事里面定义是
+    org.springframework.web.DispatcherServlet.properties的键值对。
+
+    #org.springframework.web.servlet.DispatcherServlet.properties
+    # Default implementation classes for DispatcherServlet's strategy interfaces.
+    # Used as fallback when no matching beans are found in the DispatcherServlet context.
+    # Not meant to be customized by application developers.
+
+    org.springframework.web.servlet.LocaleResolver=org.springframework.web.servlet.i18n.AcceptHeaderLocaleResolver
+
+    org.springframework.web.servlet.ThemeResolver=org.springframework.web.servlet.theme.FixedThemeResolver
+
+    org.springframework.web.servlet.HandlerMapping=org.springframework.web.servlet.handler.BeanNameUrlHandlerMapping,\
+    	org.springframework.web.servlet.mvc.annotation.DefaultAnnotationHandlerMapping
+
+    org.springframework.web.servlet.HandlerAdapter=org.springframework.web.servlet.mvc.HttpRequestHandlerAdapter,\
+    	org.springframework.web.servlet.mvc.SimpleControllerHandlerAdapter,\
+    	org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter
+
+    org.springframework.web.servlet.HandlerExceptionResolver=org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerExceptionResolver,\
+    	org.springframework.web.servlet.mvc.annotation.ResponseStatusExceptionResolver,\
+    	org.springframework.web.servlet.mvc.support.DefaultHandlerExceptionResolver
+
+    org.springframework.web.servlet.RequestToViewNameTranslator=org.springframework.web.servlet.view.DefaultRequestToViewNameTranslator
+
+    org.springframework.web.servlet.ViewResolver=org.springframework.web.servlet.view.InternalResourceViewResolver
+
+    org.springframework.web.servlet.FlashMapManager=org.springframework.web.servlet.support.SessionFlashMapManager
+
+    可以看到，这里确实定义了不同组件的类型，一共定义了８个组件，
+    处理上传组件MultipartResolver是没有默认配置的。（01 并不是每个应用多需要上次功能；02 上传不一定要用MultipartResolver）
+
+    另外，HandlerMapping、HandlerAdapter和HandlerExceptionResolver都配置了多个，其实ViewResolver也可以有多个，只是默认的配置只有一个。
+
+    ！注意两点：
+    01 默认配置并非最优配置。相反，有些默认配置被标记弃用　{DefaultAnnotationHandlerMapping,Annotation-MethodHandlerAdapter,
+   　　AnnotationMethodHandlerExceptionResolver}
+    02 默认配置是在相应配置没有配置的时候才会使用，
+　    如当使用<mvc:annotation-driven/>后，并不会全部使用默认配置。因为它配置了 HandlerMapping 、 HandlerAdapter 和 Handler-ExceptionResolver,
+      而且还作了很多别的工作。详细：org.springframework.web.servlet.config.AnnotationDrivenBeanDefinitionParser。
+
+    DispatcherServlet的创建过程主要是对９大组件进行初始化。
+
+
