@@ -46,9 +46,9 @@
 			// Either the context is not a ConfigurableApplicationContext with refresh
 			// support or the context injected at construction time had already been
 			// refreshed -> trigger initial onRefresh manually here.
+			//模板方法，事件没有触发时调用，可以在子类中重写
 			onRefresh(wac);
 		}
-
 		if (this.publishContext) {
 			// Publish the context as a servlet context attribute.
 			String attrName = getServletContextAttributeName();
@@ -58,7 +58,6 @@
 						"' as ServletContext attribute with name [" + attrName + "]");
 			}
 		}
-
 		return wac;
 	}
 
