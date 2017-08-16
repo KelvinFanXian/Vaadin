@@ -1,0 +1,21 @@
+
+
+     简单来说，ThreadLocal类型的属性就是每个线程都可以独立保存自己的内容，虽然是同一个属性，但不同的线程用的却是自己独有的一份。
+
+     ThreadLocal内部具体的实现：
+     　01 在Thread内部封装了一个map用于保存一些值
+       02 ThreadLocal在get/set的时候，首先拿到线程自身的那个map，
+       　　然后将自己作为key，所要保存的值作为value，put进
+
+       这样就将具体的值保存在了每个线程自身上面（而不是ThreadLocal里面），
+       所以每个线程之间都会有独立的一份，而不会相互影响。
+
+       ？！　为什么要用map而不是Object
+       因为：这样每个现存都可以保存不止一个ThreadLocal类型的属性。
+
+       比如，在LocaleContextHolder里面有两个ThreadLocal:local-ContextHolder和inheritableLocaleContextHolder,
+       这时就需要实例化两个ThreadLocal,然后分别作为key保存到Thread里面，
+       如果别的地方还有使用到ThreadLocal,再实例化一个ThreadLocal,然后将自己作为key,put到Thread里面。
+       也就是Thread中的那个map的每一个key-value代表着一个ThreadLocal类型的参数。
+       这个map属性叫threadLocals，它的类型定义在ThreadLocal中的静态类
+       ThreadLocal.ThreadLocalMap。
