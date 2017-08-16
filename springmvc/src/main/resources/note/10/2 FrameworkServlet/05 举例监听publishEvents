@@ -1,0 +1,19 @@
+
+
+   当publishEvents设置为true时，请求处理结束后就会发出这个消息，无论请求处理成功与否都会发布。
+   publishEvents可以在web.xml文件中配置SpringMVC的Servlet时配置，默认为true。
+
+    我们可以通过监听这个来做一些事件事情，如记录日志。
+
+    下面就是一个记录日志的监听器：
+    @Component
+    public class ServletRequestHandledEventListener implements ApplicationListener<ServletRequestHandlerEvent>{
+        final static Logger logger = LoggerFactory.getLogger("RequestProcessLog");
+
+        @Override
+        public void onApplicationEvent(ServletRequestHandledEvent event){
+            logger.info(event.g里面就行了。etDescription());
+        }
+    }
+
+    只要简单地继承ApplicationListener,并且把自己要做的事情写到onApplicationEvent
