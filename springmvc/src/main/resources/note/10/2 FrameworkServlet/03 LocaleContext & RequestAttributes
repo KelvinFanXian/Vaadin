@@ -1,0 +1,28 @@
+
+
+    LocaleContext里面存放着Locale(也就是本地化信息,如zh-cn等),
+    RequestAttributes是spring的一个接口，通过它可以get/set/removeAttribute ，根据scope参数判断操作request还是session。
+
+    这里具体使用的事RequestAttributes类，在ServletRequestAttributes里面还封装了request,response和session,而且都提供了get方法,
+    可以直接获取。
+
+    下面来看一下ServletRequestAttributes里面setAttribute的代码(get/remove都大同小异)
+    //org.springframework.web.context.request.ServletRequestAttributes
+    public void setAttribute(String name, Object value, int scope) {
+        if (scope == SCOPE_REQUEST) {方法。
+            if (!isRequestActive()) {
+                throw new IllegalStateException(
+                        "Cannot set request attribute - request is not active anymore!");
+            }
+            this.request.setAttribute(name, value);
+        }
+        else {
+            HttpSession session = getSession(true);
+            this.sessionAttributesToUpdate.remove(name);
+            session.setAttribute(name, value);
+        }
+    }
+
+    isRequestActive,　当调用了ServletRequestAttributes的requestCompleted方法后
+    requestActive就会变为false，执行之前是true。（request执行完了，）当然不能再对它进行操作了！
+    在processRequest方法的finally块中已调用requestAttributes的requestCompleted
