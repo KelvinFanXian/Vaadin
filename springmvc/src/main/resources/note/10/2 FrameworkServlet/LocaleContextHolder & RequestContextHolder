@@ -1,0 +1,64 @@
+
+
+    LocaleContextHolder，这是一个abstract类，不过里面的方法都是static的，可以直接调用，而且没有父类也没有子类！
+    也就是说我们不能对它实例化，只能调用其定义的static方法。
+    这种abstract的使用方式也值得我们学习。
+    在LocaleContextHolder中定义了两个static属性。
+
+    //org.springframework.context.i18n.LocaleContextHolder
+    private static final ThreadLocal<LocaleContext> localeContextHolder =
+            new NamedThreadLocal<LocaleContext>("Locale context");
+
+    private static final ThreadLocal<LocaleContext> inheritableLocaleContextHolder =
+            new NamedInheritableThreadLocal<LocaleContext>("Locale context");
+
+    这两个属性都是ThreadLocal<LocaleContext>类型的。
+
+    LocaleContextHolder类里面封装了两个属性localeContextHolder和inheritableLocaleContextHolder,
+    它们都是LocaleContext，其中第二个可以被子线程继承。
+    LocaleContextHolder还提供了get/set方法，可以获取和设置LocaleContext,
+
+    另外还提供了get/setLocale方法，可以直接操作Locale，
+    当然都是static的。使用起来方便！
+    比如，在程序中需要用到Locale的时候，首先想到的可能是request.getLocale(),
+    这个是最直接的方法。
+    不过有时候在service层需要用到Locale的时候，再用这种方法就不方便了，
+    只需调用一下LocaleContextHolder.getLocale()就可就可以了（它是静态方法）
+
+    ----------------------------
+    RequestContextHolder也是一样的道理，里面封装了RequestAttributes,可以get/set/removeAttribute,
+    而且因为实际封装的事ServletRequestAttributes,所以还可以getRequest,getResponse,getSession!
+    这样就可以在任何地方都能方便的获取到这些对象了！
+    另外，由于里面封装的其实是对象的引用，所以即使在doService方法中这只的Attribute,使用RequestContextHolder也一样可以获取到。
+
+
+    在方法最后的finally中调用resetContextHolders方法将原来的LocaleContext和RequestAttributes又恢复了。
+    这是因为在Servlet外面可能还有别的操作，如Filter(SpringMVC自己的HandlerInterceptor是在doService内部的)等，
+    为了不影响那些操作，所以需要进行恢复。
+
+    最后就是publishRequestHandledEvent(request,response,startTime,failureCause)发布消息了。
+    在publishRequestHandledEvent内部发布了一个ServletRequestHandledEvent消息，代码如下：
+    //org.springframework.web.servlet.FrameworkServlet
+    private void publishRequestHandledEvent(HttpServletRequest request, long startTime, Throwable failureCause) {
+        //publishEvents可以在配置servlet时设置，默认为true
+        if (this.publishEvents) {
+            // Whether or not we succeeded, publish an event.
+            //无论请求是否成功都会发布消息　
+            long processingTime = System.currentTimeMillis() - startTime;
+            this.webApplicationContext.publishEvent(
+                    new ServletRequestHandledEvent(this,
+                            request.getRequestURI(), request.getRemoteAddr(),
+                            request.getMethod(), getServletConfig().getServletName(),
+                            WebUtils.getSessionId(request), getUsernameForRequest(request),
+                            processingTime, failureCause));
+        }
+    }
+我们可以通过监听这个时间来做一些
+
+    当publishEvents设置为true时，请求处理结束后就会发出这个消息，无论请求处理成功与否都会发布。
+    publishEvents可以在web.xml文件中配置SpringMVC的Servlet时配置，默认为true。
+
+
+
+
+
