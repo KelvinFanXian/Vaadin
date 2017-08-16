@@ -16,6 +16,5 @@ public class ServletRequestHandledEventListener implements ApplicationListener<S
     @Override
     public void onApplicationEvent(ServletRequestHandledEvent event) {
         logger.info(event.getDescription());
-        System.out.println(event.getDescription());
     }
 }
