@@ -29,12 +29,19 @@
         <artifactId>spring-test</artifactId>
         <version>4.0.8.RELEASE</version>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-api -->
+
+    <!--https://www.slf4j.org/manual.html#binding-->
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
       <version>1.7.25</version>
     </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <version>1.7.21</version>
+    </dependency>
+
   </dependencies>
   <build>
     <finalName>spring-mvc</finalName>
