@@ -5,7 +5,7 @@
      ThreadLocal内部具体的实现：
      　01 在Thread内部封装了一个map用于保存一些值
        02 ThreadLocal在get/set的时候，首先拿到线程自身的那个map，
-       　　然后将自己作为key，所要保存的值作为value，put进
+       　　然后将自己作为key，所要保存的值作为value，put进去。
 
        这样就将具体的值保存在了每个线程自身上面（而不是ThreadLocal里面），
        所以每个线程之间都会有独立的一份，而不会相互影响。
