@@ -1,0 +1,86 @@
+
+
+    processRequest 是FrameworkServlet类在处理请求中最核心的方法。
+    //org.springframework.web.servlet.FrameworkServlet
+    protected final void processRequest(HttpServletRequest request, HttpServletResponse response)
+    			throws ServletException, IOException {
+
+    		long startTime = System.currentTimeMillis();
+    		Throwable failureCause = null;
+            //获取LocaleContextHolder中原来保存的LocaleContext
+    		LocaleContext previousLocaleContext = LocaleContextHolder.getLocaleContext();
+    		//获取当前请求的LocaleContext
+    		LocaleContext localeContext = buildLocaleContext(request);
+            //获取RequestContextContextHolder中原来保存的RequestAttributes
+    		RequestAttributes previousAttributes = RequestContextHolder.getRequestAttributes();
+    		//获取当前请求的ServletRequestAttributes
+    		ServletRequestAttributes requestAttributes = buildRequestAttributes(request, response, previousAttributes);
+
+    		WebAsyncManager asyncManager = WebAsyncUtils.getAsyncManager(request);
+    		asyncManager.registerCallableInterceptor(FrameworkServlet.class.getName(), new RequestBindingInterceptor());
+
+            //将当前请求LocaleContext和ServletRequestAttributes设置到LocaleContextHolder和RequestContextHolder
+    		initContextHolders(request, localeContext, requestAttributes);
+
+    		try {
+    		    //实际处理请求入口
+    			doService(request, response);
+    		}
+    		catch (ServletException ex) {
+    			failureCause = ex;
+    			throw ex;
+    		}
+    		catch (IOException ex) {
+    			failureCause = ex;
+    			throw ex;
+    		}
+    		catch (Throwable ex) {
+    			failureCause = ex;
+    			throw new NestedServletException("Request processing failed", ex);
+    		}
+
+    		finally {
+    		    //恢复原来的LocaleContext和ServletRequestAttributes到LocaleContextHolder和RequestContextHolder中
+    			resetContextHolders(request, previousLocaleContext, previousAttributes);
+    			if (requestAttributes != null) {
+    				requestAttributes.requestCompleted();
+    			}
+
+    			if (logger.isDebugEnabled()) {
+    				if (failureCause != null) {
+    					this.logger.debug("Could not complete request", failureCause);
+    				}
+    				else {
+    					if (asyncManager.isConcurrentHandlingStarted()) {
+    						logger.debug("Leaving response open for concurrent processing");
+    					}
+    					else {
+    						this.logger.debug("Successfully completed request");
+    					}
+    				}
+    			}
+                //发布 ServletRequestHandlerEvent 消息
+    			publishRequestHandledEvent(request, startTime, failureCause);
+    		}
+    	}
+
+   processRequest方法中的核心语句是doService(request,response)，
+   这是一个模板方法，在DispatcherServlet中具体实现。
+
+   在doService前后还做了一些事情（装饰模式）:
+        01 获取了LocaleContextHolder和RequestContextHolder中原来保存的LocaleContext和RequestAttributes
+           并设置到previousLocaleContext和previousAttributes临时属性，
+        02 调用buildLocaleContext和buildRequestAttributes方法获取到当前请求的LocaleContext属性和RequestAttributes,
+        03 通过initContextHolders方法将它们设置到LocaleContextHolder和RequestContextHolder中（处理完成后再恢复到原来的值）
+        04 使用request拿到异步处理管理器，并设置了拦截器，
+        05 执行doService方法
+        06 (finally中)通过resetContextHolders方法将原来的previousLocaleContext和previousAttributes恢复到LocaleContextHolder
+            和RequestContextHolder中
+        07 调用publishRequestHandledEvent方法发布一个ServletRequestHandledEvent类型的消息。
+
+
+    总结：
+        除了异步请求和调用doService方法具体处理请求，processRequest自己主要做了两件事情：
+            01 对LocaleContext和RequestAttributes的设置和恢复。
+            02 处理完后发布了ServletRequestHandledEvent消息。
+
