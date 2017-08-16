@@ -1,0 +1,97 @@
+
+        //org.springframework.web.servlet.FrameworkServlet
+        protected void configureAndRefreshWebApplicationContext(ConfigurableWebApplicationContext wac) {
+            if (ObjectUtils.identityToString(wac).equals(wac.getId())) {
+                // The application context id is still set to its original default value
+                // -> assign a more useful id based on available information
+                if (this.contextId != null) {
+                    wac.setId(this.contextId);
+                }
+                else {
+                    // Generate default id...
+                    wac.setId(ConfigurableWebApplicationContext.APPLICATION_CONTEXT_ID_PREFIX +
+                            ObjectUtils.getDisplayString(getServletContext().getContextPath()) + "/" + getServletName());
+                }
+            }
+
+            wac.setServletContext(getServletContext());
+            wac.setServletConfig(getServletConfig());
+            wac.setNamespace(getNamespace());
+            //添加监听ContextRefreshedEvent的监听器
+            wac.addApplicationListener(new SourceFilteringListener(wac, new ContextRefreshListener()));
+
+            // The wac environment's #initPropertySources will be called in any case when the context
+            // is refreshed; do it eagerly here to ensure servlet property sources are in place for
+            // use in any post-processing or initialization that occurs below prior to #refresh
+            ConfigurableEnvironment env = wac.getEnvironment();
+            if (env instanceof ConfigurableWebEnvironment) {
+                ((ConfigurableWebEnvironment) env).initPropertySources(getServletContext(), getServletConfig());
+            }
+
+            postProcessWebApplicationContext(wac);
+            applyInitializers(wac);
+            wac.refresh();
+        }
+
+    这里首先调用getContextClass方法获取要创建的类型，它可以通过contextClass属性设置到Servlet中，
+    默认使用org.springframework.web.context.support.Xml-WebApplication-Context。
+
+    然后然后检查是否属于ConfigurableWebApplicationContext类型，不属于就抛出异常。
+
+    接下来，通过BeanUtils.instantiateClass(contextClass)进行创建，创建后设置的contextConfigLocation传入，
+    （如果没有配置，默认传入WEB-INFO/[ServletName]-Servlet.xml），然后配置。
+
+    ！需要说明的是，在configureAndRefreshWebApplicationContext方法中给wac添加了监听器。
+    wac.addApplicationListener(new SourceFilteringListener(wac, new ContextRefreshListener()));
+
+    SourceFilteringListener可以根据输入的参数进行选择，所以实际监听的是ContextRefreshListener的事件。
+    ContextRefreshListener是FrameworkServlet的内部类，监听ContextRefreshedEvent事件，
+    当接收到消息时调用FrameworkServlet的onApplicationEvent方法，
+    在onApplicationEvent中会调用一次onRefresh方法，并将refreshEvenReceived标志设置为true,表示已经refresh过了：
+    //org.springframework.web.servlet.FrameworkServlet
+    private class ContextRefreshListener implements ApplicationListener<ContextRefreshedEvent> {
+
+        @Override
+        public void onApplicationEvent(ContextRefreshedEvent event) {
+            FrameworkServlet.this.onApplicationEvent(event);
+        }
+    }
+
+    public void onApplicationEvent(ContextRefreshedEvent event) {
+        this.refreshEventReceived = true;
+        onRefresh(event.getApplicationContext());
+    }
+
+
+    再回到initWebApplicationContext方法，可以看到后面会根据refreshEventReceived标志来判断是否需要运行onRefresh。
+    //org.springframework.web.servlet.FrameworkServlet.initWebApplicationContext
+    if(!this.refreshEventReceived){
+        onRefresh(wac);
+    }
+
+    当使用第三种方法初始化已经refresh,不需要再调用onRefresh。
+    同样在第一种方式中也调用了configureAndRefreshWebApplicationContext方法，也refresh过，
+    所以只有使用第二种方式初始化webApplicationContext的时候才会在这里调用onRefresh方法。
+    不过不管用哪种方式调用，onRefresh最终肯定会而且只会调用一次，而且DispatcherServlet正是通过重写这个模板方法来实现初始化的。　
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

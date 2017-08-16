@@ -1,0 +1,11 @@
+        最后会根据publishContext标志判断是否将创建出来的webApplicationContext设置到ServletContext的属性中，
+        publishContext标志可以在配置Servlet时通过init-param参数进行设置，
+        HttpServletBean初始化时会将其设置到publishContext参数。
+
+        之所以将创建出来的webApplicationContext设置到ServletContext的属性中，主要是为了方便获取在前面获取。
+
+        前面介绍了配置Servlet时可以设置的一些初始化参数，总结如下：
+     contextAttribute:在ServletContext的属性中，要用作WebApplicationContext的属性名称。
+     contextClass:创建WebApplicationContext类型。
+     contextConfigLocation:的属性名称。SpringMVC配置文件的位置。
+     publishContext:是否将webApplicationContext设置到ServletContext的属性。

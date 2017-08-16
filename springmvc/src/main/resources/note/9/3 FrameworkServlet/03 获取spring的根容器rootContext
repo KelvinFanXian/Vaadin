@@ -1,0 +1,17 @@
+获取spring根容器的原理：
+    默认spring会将自己的容器设置成ServletContext的属性
+    默认根容器的key为org.springframework.web.context.WebApplicationContext.ROOT,
+    定义在org.springframework.web.context.WebApplicationContext中。
+
+    /**
+	 * Context attribute to bind root WebApplicationContext to on successful startup.
+	 * <p>Note: If the startup of the root context fails, this attribute can contain
+	 * an exception or error as value. Use WebApplicationContextUtils for convenient
+	 * lookup of the root WebApplicationContext.
+	 * @see org.springframework.web.context.support.WebApplicationContextUtils#getWebApplicationContext
+	 * @see org.springframework.web.context.support.WebApplicationContextUtils#getRequiredWebApplicationContext
+	 */
+	String ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE = WebApplicationContext.class.getName() + ".ROOT";
+
+	所以获取根容器只需要调用ServletContext的getAttribute就可以了。
+	ServletContext#getAttribute("org.springframework.web.context.WebApplicationContext");
