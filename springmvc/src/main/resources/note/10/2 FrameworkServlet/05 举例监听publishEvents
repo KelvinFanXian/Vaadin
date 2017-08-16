@@ -7,7 +7,7 @@
 
     下面就是一个记录日志的监听器：
     @Component
-    public class ServletRequestHandledEventListener implements ApplicationListener<ServletRequestHandlerEvent>{
+    public class ServletRequestHandledEventListener implements ApplicationListener<ServletRequestHandledEvent>{
         final static Logger logger = LoggerFactory.getLogger("RequestProcessLog");
 
         @Override
