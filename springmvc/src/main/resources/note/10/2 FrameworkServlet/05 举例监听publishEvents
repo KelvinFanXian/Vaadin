@@ -12,8 +12,8 @@
 
         @Override
         public void onApplicationEvent(ServletRequestHandledEvent event){
-            logger.info(event.g里面就行了。etDescription());
+            logger.info(event.getDescription());
         }
     }
 
-    只要简单地继承ApplicationListener,并且把自己要做的事情写到onApplicationEvent
+    只要简单地继承ApplicationListener,并且把自己要做的事情写到onApplicationEvent里面就行了。
