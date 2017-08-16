@@ -1,0 +1,9 @@
+
+    FrameworkServlet小结：
+        首先是在Service方法里面添加了对PATCH的处理，并将所有需要自己处理的请求都集中到
+    processRequest方法进行统一处理，这和HttpServlet里面根据request的类型将请求分配到各个
+    不同的方法进行处理的过程正好相反。　
+
+        然后就是processRequest方法，在processRequest里面主要的处理逻辑交给了doService,这是一个
+    模板方法，在子类具体实现，另外就是对使用当前request获取到的LocaleContext和RequestAttributes
+    进行保存，以及处理完之后的恢复，在最后发布了ServletRequestHandledEvent事件。
