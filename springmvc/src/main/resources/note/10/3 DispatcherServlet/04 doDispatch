@@ -1,0 +1,16 @@
+
+
+    doDispatch方法也非常简洁，从顶层设计了整个请求的处理过程。
+    doDispatch最核心的代码只有四句，它们的任务分别是：
+        01 根据request找到handler
+        02 根据handler找到对应的handlerAdapter
+        03 用handlerAdapter处理handler
+        04 调用processDispatchResult方法处理上面处理之后的结果（包括找到view）并渲染输出给用户
+
+        对应代码如下：
+
+        mappedHandler = getHandler(processedRequest);
+        HandlerAdapter ha = getHandlerAdapter(mappedHandler.getHandler());
+        mv = ha.handle(processedRequest, response, mappedHandler.getHandler());
+        processDispatchResult(processedRequest, response, mappedHandler, mv, dispatchException);
+
