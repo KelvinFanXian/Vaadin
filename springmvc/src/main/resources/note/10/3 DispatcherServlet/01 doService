@@ -1,0 +1,64 @@
+
+
+    DispatcherServlet是SpringMVC核心的泪，整个处理过程的顶层设计都在这里面，所以我们一定要把这个类彻底弄明白。
+
+    通过之前的分析我们知道，DispatcherServlet里面，执行处理的方法应该是doService,
+    不过doService并没有直接进行处理，而是交给doDispatch进行具体的处理，
+    在doDispatch进行处理前，doService做了一些事情：
+        判断是不是include请求，如果是则对request的Attribute做了个快照备份，
+        等doDispatch处理完之后（如果不是异步调用且未完成）进行还原，
+
+    在做完快照后又对request设置了一些属性，代码如下：
+    //org.springframework.web.servlet.DispatcherServlet
+    protected void doService(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        if (logger.isDebugEnabled()) {
+            String resumed = WebAsyncUtils.getAsyncManager(request).hasConcurrentResult() ? " resumed" : "";
+            logger.debug("DispatcherServlet with name '" + getServletName() + "'" + resumed +
+                    " processing " + request.getMethod() + " request for [" + getRequestUri(request) + "]");
+        }
+
+        // Keep a snapshot of the request attributes in case of an include,
+        // to be able to restore the original attributes after the include.
+        Map<String, Object> attributesSnapshot = null;
+        //当include请求时，对request的Attribute做快照备份
+        if (WebUtils.isIncludeRequest(request)) {
+            attributesSnapshot = new HashMap<String, Object>();
+            Enumeration<?> attrNames = request.getAttributeNames();
+            while (attrNames.hasMoreElements()) {
+                String attrName = (String) attrNames.nextElement();
+                if (this.cleanupAfterInclude || attrName.startsWith("org.springframework.web.servlet")) {
+                    attributesSnapshot.put(attrName, request.getAttribute(attrName));
+                }
+            }
+        }
+
+        // Make framework objects available to handlers and view objects.
+        //对request设置一些属性
+        request.setAttribute(WEB_APPLICATION_CONTEXT_ATTRIBUTE, getWebApplicationContext());
+        request.setAttribute(LOCALE_RESOLVER_ATTRIBUTE, this.localeResolver);
+        request.setAttribute(THEME_RESOLVER_ATTRIBUTE, this.themeResolver);
+        request.setAttribute(THEME_SOURCE_ATTRIBUTE, getThemeSource());
+
+        FlashMap inputFlashMap = this.flashMapManager.retrieveAndUpdate(request, response);
+        if (inputFlashMap != null) {
+            request.setAttribute(INPUT_FLASH_MAP_ATTRIBUTE, Collections.unmodifiableMap(inputFlashMap));
+        }
+        request.setAttribute(OUTPUT_FLASH_MAP_ATTRIBUTE, new F       request.setAttribute(FLASH_MAP_MANAGER_ATTRIBUTE, this.flashMapManager);
+
+        try {
+            doDispatch(request, response);
+        }
+        finally {
+            if (WebAsyncUtils.getAsyncManager(request).isConcurrentHandlingStarted()) {
+                return;
+            }
+            // Restore the original attribute snapshot, in case of an include.
+            //还原request快照的属性
+            if (attributesSnapshot != null) {
+                restoreAttributesAfterInclude(request, attributesSnapshot);
+            }
+        }
+    }
+
+
+
