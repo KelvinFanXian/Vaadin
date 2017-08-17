@@ -1,0 +1,14 @@
+
+
+    从Request获取outputFlashMap除了直接获取DispatcherServlet.OUTPUT_FLASH_MAP_ATTRIBUTE属性，
+还可以使用RequestContextUtils来操作：RequestContextUtils.getOutputFlashMap(request),这样也可以得到outputFlashMap,
+其实它内部也是从request属性中获取的。
+
+    当用户提交http://xxx/submit请求后，浏览器地址栏会自动跳转到http://xxx/showOrders?locale=zh-cn连接，而在
+showOrder的model里会存在["name","张三"]和["orderId","xxx"]两个属性，而且对客用户并不知道。用户并不知道。
+
+    这就是flashMap的用法，inputFlashMap用于保存上次请求转发过来的属性，outputFlashMap用于保存本次请求需要转发的
+属性，FlashManager用于管理它们，后面会详细分析flashManager。
+
+    doService就分析完了，在这里主要是对request设置了一些属性，如果是include请求还会对当前的request属性作快照备份，
+并在处理结束后恢复。最后将请求转发给doDispatch方法。
