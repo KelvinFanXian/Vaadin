@@ -1,0 +1,78 @@
+
+
+    使用processDispatchResult方法处理前面返回的结果，其中包括
+    01 处理异常、
+    02 渲染页面、
+    03 触发Interceptor的afterCompletion方法
+三部分内容。
+
+    我们先来说一下doDispatch的异常处理结构。doDispatch有两层异常捕获，
+        内层是捕获在对请求进行处理的过程中抛出的异常，
+        外层主要是在渲染页面时抛出的。
+
+    内层的异常，也就是执行请求处理时的异常会设置到dispatchException变量，然后在processDispatchResult方法中进行
+处理，外层则是处理processDispatchResult方法抛出的异常。processDispatchResult代码如下：
+    //org.springframework.web.servlet.DispatchServlet
+    private void processDispatchResult(HttpServletRequest request, HttpServletResponse response,
+            HandlerExecutionChain mappedHandler, ModelAndView mv, Exception exception) throws Exception {
+
+        boolean errorView = false;
+        //如果请求处理的过程中有异常抛出则处理异常
+        if (exception != null) {
+            if (exception instanceof ModelAndViewDefiningException) {
+                logger.debug("ModelAndViewDefiningException encountered", exception);
+                mv = ((ModelAndViewDefiningException) exception).getModelAndView();
+            }
+            else {
+                Object handler = (mappedHandler != null ? mappedHandler.getHandler() : null);
+                mv = processHandlerException(request, response, handler, exception);
+                errorView = (mv != null);
+            }
+        }
+
+        // Did the handler return a view to render?
+        //渲染页面
+        if (mv != null && !mv.wasCleared()) {
+            render(mv, request, response);
+            if (errorView) {
+                WebUtils.clearErrorRequestAttributes(request);
+            }
+        }
+        else {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Null ModelAndView returned to DispatcherServlet with name '" + getServletName() +
+                        "': assuming HandlerAdapter completed request handling");
+            }
+        }
+
+        if (WebAsyncUtils.getAsyncManager(request).isConcurrentHandlingStarted()) {
+            // Concurrent handling started during a forward
+            //如果启动了异步处理则返回
+            return;
+        }
+        //发出请求处理完成通知，触发Interceptor的afterCompletion
+        if (mappedHandler != null) {
+            mappedHandler.triggerAfterCompletion(request, response, null);
+        }
+    }
+
+    可以看到processDispatchResult处理异常的方式其实就是将相应的错误页面设置到view,在其中的processHandlerException
+方法中用到了HandlerExceptionResolve。
+    渲染页面具体在render方法中执行，render中首先对response设置了Local，过程中使用到了LocaleResolver，然后判断View
+如果是String类型则调用resolveViewName方法使用ViewResolver得到实际的View，最后调用View的render方法对页面进行具体渲染，
+渲染的过程中使用到了ThemeResolver。
+    最后通过mappedHandler的triggerAfterCompletion方法触发Interceptor的afterCompletion方法，这里的Interceptor也是按
+反方向执行的。到这里processDispatchResult方法就执行完了。
+    再返回doDispatch方法中，再最后的finally中判断是否请求启动了异步处理，如果启动了则调用相应异步处理的拦截器，否则
+如果是上传请求则删除上传请求过程中产生的临时资源。
+    doDispatch方法就分析完了。可以看到SpringMVC的处理方式是现在顶层设计好整体结构，然后将具体的处理交给不同的组件
+具体去实现的。
+
+
+
+
+
+
+
+
+
