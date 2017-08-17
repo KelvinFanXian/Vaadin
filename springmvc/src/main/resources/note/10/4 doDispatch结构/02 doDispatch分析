@@ -1,0 +1,51 @@
+
+
+     doDispatch大体可以分为两个部分：处理请求和渲染页面。开头部分先定义了几个变量，在后面要用到：
+如下：
+    01 HttpServletRequest processedRequest:实际处理时所用的request，如果不是上传请求则直接使用接收到的
+request，否则封装为上传类型的request。
+    02 HandlerExecutionChain mappedHandler:处理请求的处理器链（包含处理器和对应的Interceptor）。
+    03 boolean multipartRequestParsed:是不是上传请求的标志。
+    04 ModelAndView mv：封装Model和View的容器，此变量在整个SpringMVC处理的过程中承担这非常重要的角色。
+    05 Exception dispatchException：处理请求过程中跑出的异常。需要注意的是它并不抱渲染过程中抛出的异常。
+
+
+    doDispatch中首先检查是不是上传请求，如果是上传请求，则将request转化为MultipartHttpServletRequest,
+并将multipartRequestParse设置为true。其中使用到了MultipartResolver。
+    然后通过getHandler方法获取Handler处理器链，其中使用到了HandlerMapping，返回值为HandlerExceptionChain类型，
+其中包含着与当前request相匹配的Interceptor和Handler。
+    getHandler代码如下：
+    //org.springframework.web.servlet.DispatcherServlet
+    protected HandlerExecutionChain getHandler(HttpServletRequest request) throws Exception {
+        for (HandlerMapping hm : this.handlerMappings) {
+            if (logger.isTraceEnabled()) {
+                logger.trace(
+                        "Testing handler map [" + hm + "] in DispatcherServlet with name '" + getServletName() + "'");
+            }
+            HandlerExecutionChain handler = hm.getHandler(request);
+            if (handler != null) {
+                return handler;
+            }
+        }
+        return null;
+    }
+
+    方法结构非常简单，HandlerMapping在后面详细讲解，HandlerExceptionChain的类型类似于前面Tomcat中讲过的Pipeline,
+Interceptor和Handler相当于那边的Value和BaseValue，执行时先依次执行Interceptor和preHandler方法，最后执行Handler，
+返回的时候按相反的顺序执行Interceptor的postHandle方法。
+
+    接下来处理GET、HEAD请求的Last-Modified。当浏览器第一次跟服务器请求资源（GET/HEAD）请求时，服务器在返回的请求
+头里包含一个Last-Modified的属性，代表本资源最后是什么时候修改的。在浏览器之后发送请求时会同时发送之前接收到的
+Last-Modified，服务器接受到带Last-Modified的请求后，会用其值和自己实际资源最后修改时间作对比，如果资源过期了则
+返回新的资源（同时返回新的Last-Modified），否则直接返回304状态码，表示资源未过期，浏览器直接使用之前缓存的结果。
+    接下来依次调用相应的Interceptor和preHandle。
+    处理完Interceptor和preHandle后就到了此方法最关键的地方——让HandlerAdapter使用Handler处理请求，Controller
+就是在这个地方执行的。这里主要使用了HandlerAdapter，具体内容在后面详细讲解。
+    Handler处理完请求后，如果需要异步处理，则直接返回，如果不需要异步处理，当view为空时（如Handler返回值为void），
+设置默认view，然后执行相应Interceptor和postHandle。
+设置默认view的过程中使用到了ViewNameTranslator。
+    到这里请求处理的内容就完成了，接下来使用processDispatchResult方法处理前面返回的结果，其中包括
+处理异常、渲染页面、触发Interceptor的afterCompletion方法 三部分内容。
+
+
+
