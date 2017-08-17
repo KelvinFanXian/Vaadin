@@ -1,0 +1,62 @@
+
+
+    对request设置的属性中，前面４个属性
+        webApplicationContext,
+        localeResolver,
+        themeResolver,
+        themeSource
+    在之后的介绍的handler和view中需要使用，到时候再作分析。
+
+    后面三个属性都和flashMap相关，主要用于Redirect转发时参数的传递，
+
+    比如，为了避免为了避免重复提交表单，可以在处理完post请求后redirect到一个get的请求，
+这样即使用户刷新也不会有重复提交的问题。
+    不过这里有个问题，前面的post请求是提交订单，提交完后redirect到一个显示订单的页面，
+显然在显示订单的页面需要知道订单的一些信息，但redirect本身没有传递参数的功能的，
+    按普通的模式如果想传递参数，就只能将其写入url中，但是url有长度限制，另外有些场景中我们
+想传递的参数还不想暴露在url里。
+
+
+    这时就可以用flashMap来传递参数了，我们只需要redirect之前将需要的参数
+写入OUTPUT_FLASH_MAP_ATTRIBUTE,
+    如下（这里使用了前面讲到的RequestContextHolder）：
+
+    ((FlashMap)((ServletRequestAttributes)(RequestContextHolder.getRequestAttributes()))
+        .getRequest().getAttribute(DispatcherServlet.OUTPUT_FLASH_MAP_ATTRIBUTE))
+        .put("name","张三");
+
+    这样在redirect之后的handle中spring就会自动将其设置到model里
+（先设置到INPUT_FLASH_MAP_ATTRIBUTE属性里，然后再放到model里）。
+    当然这样操作还是有点麻烦，spring还给我们提供了更加简单的操作方法，我们只需要在handler方法的参数
+中定义RedirectAttributes类型的变量，然后把需要保存的属性设置到里面就行，之后的事情spring自动完成。
+
+
+    RedirectAttributes有两种设置参数的方法addAttribute(key,vlue)和addFlashAttribute(key,value),
+用第一个方法设置的参数会拼接到url中，第二个方法设置的参数就是我们刚才所讲的flashMap保存的。
+比如，一个提交订单的Controller可以这么写：
+
+    @RequestMapping(value="/submit",method=RequestMethod.POST)
+    public String submit(RedirectAttribute attr) throws IOException{
+        ((FlashMap)((ServletRequestAttributes)(RequestContextHolder.getRequestAttributes()))
+            .getRequest().getAttribute(DispatcherServlet.OUTPUT_FLASH_MAP_ATTRIBUTE))
+            .put("name","张三");
+
+        attr.addFlashAttribute("ordersId","xxx");
+        attr.addAttribute("local","zh-cn");
+        return "redirect:showOrders";
+    }
+
+    @RequestMapping(value="/showOrders",method=RequestMethod.GET)
+    public String showOrders(Model model) throws IOException{
+        doSomething...
+        return "orders";中。
+    }
+
+
+这里分别使用了三种方法来传递redirect参数
+    01 使用前面讲过的RequestContextHolder获取到request，并从其属性中拿到outputFlashMap,然后将属性
+放进去，当然request可以直接写到参数里让SpringMVC给设置进来，这里主要是为了让大家看一下使用RequestContextHolder
+获取request的方法。
+    02 通过传入的attr参数的addFlashAttribute方法设置，这样也可以保存到outputFlashMap中，可01效果一样。
+    03 通过传入的attr参数的addAttribute方法设置，这样设置的参数不会保存到FlashMap,而是会拼接到url
+
