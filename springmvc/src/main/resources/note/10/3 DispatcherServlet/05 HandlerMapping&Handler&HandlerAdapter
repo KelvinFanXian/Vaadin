@@ -1,0 +1,35 @@
+    Mapping、Handler和HandlerAdapter这三个概念的准确理解SpringMVC非常重要。
+对这三个概念理解不够透彻，会严重影响对SpringMVC的理解。
+
+    Handler:
+        也就是处理器，它直接对应MVC中的C也就是Controller层。
+        它的具体表现形式有很多：
+            01 类
+            02 方法
+            03 其他能想到的表现形式，它的类型是Object
+        我们前面例子中标注了@RequestMapping的所有方法都可以看成一个handler。只要可以实际处理请求就是可以是handler。
+
+    HandlerMapping:
+        用来查找handler的，在SpringMVC中会处理很多请求，每个请求都需要一个handler来处理，具体接收到一个请求后使用哪一个
+        handler来处理，这就是HandlerMapping要做的事情。
+
+    HandlerAdapter:
+        很多人对这个的理解都不准确，其实从名字上就可以看出它是一个Adapter，也就是适配器。
+        因为SpringMVC中的Handler可以是任意形式的，只要能处理请求就OK，但是Servlet需要的处理方法结构却是固定的，都是
+    以request,response为参数的方法（如doService方法）。
+        怎么让固定的Servlet处理方法调用灵活的Handler来进行处理呢？
+        这就是HandlerAdapter要做的事情。
+
+
+        通俗解释：
+            Handler是用来干活的工具，
+            HandlerMapping用于根据需要干的活找到对应的工具，
+            HandlerAdapter是使用工具干活的人。（各种干活的人，各个工种）
+
+
+    另外，View--ViewResolver的原理 和 Handle--HandlerMapping的原理 类似，
+    View是用来展示数据的，而ViewResolver用来查找View。
+
+    回头看doDispatch的四句代码：
+        使用HandlerMapping找到干活的Handler,找到使用Handler的HandlerAdapter，让HandlerAdapter使用
+    Handler干活。
