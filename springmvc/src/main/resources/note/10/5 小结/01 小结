@@ -1,0 +1,18 @@
+
+
+    本章整体分析了SpringMVC中请求处理的过程。首先对三个Servlet进行了分析，然后
+单独分析了DispatcherServlet中的doDispatch方法。
+
+    三个Servlet的处理过程大致功能如下：
+    01 HttpServletBean：没有参与实际请求的处理。
+    02 FrameworkServlet：将不同类型的请求合并到了processResult方法统一处理，
+       processResult方法中做了三件事：
+       1调用了doService模板方法具体处理请求。
+       2将当前请求的LocaleContext和ServletRequestAttributes在处理请求前设置到了
+        LocaleContextHolder和RequestContextHolder，并在处理完成后恢复，
+       3请求处理完后发布了ServletHandledEvent消息。
+    03 DispatcherServlet：doService方法给request设置了一些属性并将请求交给doDispatch方法具体处理。
+
+    DispatcherServlet中的doDispatch方法完成了SpringMVC中请求处理过程的顶层设计，它
+使用DispatcherServlet中的九大组件完成了具体的请求处理。另外HandlerMapping、Handler和HandlerAdapter这
+三个概念的含义以及它们之间的关系也非常重要。
