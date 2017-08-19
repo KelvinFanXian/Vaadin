@@ -1,0 +1,58 @@
+
+
+    HandlerMapping： 根据request找到相应的Handler和Interceptors，HandlerMapping里只有一个方法。
+       HandlerExceptionChain getHandler(HttpServletRequest request) throws Exception;
+
+    方法的实现非常灵活，只要使用request返回HandlerExceptionChain就可以里。我们也可以自己定义一个HandlerMapping，然后实现getHandler
+方法。
+    比如，可以定义一个TudouHandlerMapping，将以tudou开始的请求对应到digua的处理器去处理，只需要判断请求的url：
+如果是以tudou开头那么就返回地瓜的Handler。如果还想更进一步还可以细分，如将tudou开头的Get请求对应到maidiguo，而Post对应到shoudigua，其他
+类型全部交给digua处理器，程序大码如下：
+
+    public class DiguaHandlerMapping implements HandlerMapping{
+        @Override
+        public  HandlerExceptionChain getHandler(HttpServletRequest request) throws Exception{
+            String url = request.getRequestURI().toString();
+            String method = request.getMethod();
+            if(url.startWith("/todou")){
+                if(method.equalsIgnoreCase("GET"))
+                    return "maidigua对应Handler";
+                else if(method.equalsIgnoreCase("POST"))
+                    return "shoudigua对应Handler"；
+                else
+                    return "digua对应的Handler"；
+            }
+            return null;
+        }
+    }
+
+    以上是为代码，并没有实际创建Handler，另外返回值除了有Handler还应该包含Interceptor。
+    这里的HandlerMapping只能找到"tudou"相关的Handler，更为一般的是维护一个对应多个请求的map，其实SimpleUrlHandlerMapping的基本原理
+就是那样。HandlerMapping编写出来后需要注册到SpringMVC的容器里面才能使用，注册也非常简单，只需要在配置文件里配置一个bean就可以了，SpringMVC
+会按照类型将它注册到HandlerMapping中。
+
+    如果另有一个请求是／tudoupian，而且是在另外的HandlerMapping中映射的，这就涉及一个顺序问题了。
+这里的顺序通过一个order属性来定义（当然HandlerMapping需要实现Order接口），order越小越先使用，比如：
+
+    <bean class="com.kelvin.TudouHandlerMapping" p:order="1"/>
+    <bean class="com.kelvin.TudouPianHandlerMapping" p:order="0"/>
+
+    查找Handler是按顺序遍历所有的HandlerMapping，当找到一个HandlerMapping后立即停止查找并返回，代码如下：
+
+    //org.springframework.web.servlet.DispatcherServlet
+    protected HandlerExecutionChain getHandler(HttpServletRequest request) throws Exception {
+        for (HandlerMapping hm : this.handlerMappings) {
+            if (logger.isTraceEnabled()) {
+                logger.trace(
+                        "Testing handler map [" + hm + "] in DispatcherServlet with name '" + getServletName() + "'");
+            }
+            HandlerExecutionChain handler = hm.getHandler(request);
+            if (handler != null) {
+                return handler;
+            }
+        }
+        return null;
+    }
+
+
+
