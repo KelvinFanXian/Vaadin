@@ -1,0 +1,20 @@
+
+
+    HandlerExceptionResolver:
+        根据异常设置ModelAndView，之后再交给render方法进行渲染。render只负责将ModelAndView渲染成页面，具体ModelAndView是怎么来的render并
+不关心。这也是SpringMVC设计优秀的一个表现--分工明确互不干涉。通过前面doDispatcher的分析可以知道HandlerExceptionResolver只是用于解析
+对请求做处理过程中产生的异常，而渲染环节产生的异常不归它管。
+
+    现在我们就知道原因了： 它是在render之前工作的，先解析出ModelAndView之后render才去渲染，当然它就不能处理render过程中的异常了。知道了这
+一点可以为我们分析一些问题提供方便。HandlerExceptionResolver接口定义如下：
+
+    //org.springframework.web.servlet.HandlerExceptionResolver
+    public interface HandlerExceptionResolver {
+    	ModelAndView resolveException(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex);
+    }
+
+    只有一个方法，只需要从异常解析出ModelAndView就可以了。具体实现可以维护一个异常为key、View为value的Map，解析时直接从Map里获取View，如果
+在Map里没有相应的异常可以返回默认的view。
+
+    另外建议如果开发内网系统则可以在出错页面显示一些细节，这样方便调试。 但如果是互联网的系统最好不要将异常的太多细节显示给用户，因为那样很容易被
+黑客利用。当然，日志都要做得尽可能详尽。
