@@ -1,0 +1,98 @@
+
+
+    HandlerAdapter可以理解为使用handler干活的人。它里面一共有三个方法，
+     support（Object handle）判断是否可以使用某个Handler；
+     handler方法是用来具体使用Handler干活；
+     getLastModified是获取资源的LastModified，Last-modified 是资源最后一次修改的时间。
+
+     HandlerAdaptor的接口定义如下：
+     //org.springframework.web.servlet.HandlerAdapter
+     public interface HandlerAdapter {
+     	boolean supports(Object handler);
+     	ModelAndView handle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception;
+     	long getLastModified(HttpServletRequest request, Object handler);
+     }
+
+     之所以使用HandlerAdapter是因为springMVC中没有对处理器作任何限制，处理器可以以任何合理的方式来表现，可以是一个类，一个方法，其他。
+ 从handle方法可以看出它是Object的类型。这种模式给开发者极大的自由。
+
+    接着前面的例子写一个HandlerAdapter，首先写一个MaiDiguaController处理器，然后再对应HandlerAdapter，代码如下：
+
+    package com.kelvin.controller
+    public class MaiDiguaController{
+        public ModelAndView maidigua(HttpServetRequest request,HttpServletResponse response){
+            //捡地瓜
+            //称重
+            //算钱
+        }
+    }
+
+    package com.kelvin.servlet
+    public class MaiDiguaHandlerAdapter implements HandlerAdapter{
+        @Override
+        public boolean support(Object handler){
+            return handler instanceof MaiDiguaController;
+        }
+
+        @Override
+        public ModelAndView handle(HttpServletRequest request,HttpServletResponse response,Object handler)
+            throws Exception{
+            return ((MaiDiguaController)handler).maidigua(request,response);
+        }
+
+        @Override
+        public long getLastModified(HttpServletRequest request,Object handler){
+            return -1L;
+        }
+    }
+
+    这里写了一个买地瓜的Handler--MaiDiguaController，用来具体处理买地瓜这件事情，MaiDiguaHandlerAdapter使用MaiDiguaController完成
+买地瓜这件事，当然这里只是简单的调用。
+
+
+    下面再看一个SpringMVC自己的HandlerAdapter--SimpleControllerHandlerAdapter，代码如下
+    //org.springframework.web.servlet.mvc.SimpleControllerHandlerAdapter
+    public class SimpleControllerHandlerAdapter implements HandlerAdapter {
+
+    	@Override
+    	public boolean supports(Object handler) {
+    		return (handler instanceof Controller);
+    	}
+
+    	@Override
+    	public ModelAndView handle(HttpServletRequest request, HttpServletResponse response, Object handler)
+    			throws Exception {
+
+    		return ((Controller) handler).handleRequest(request, response);
+    	}
+
+    	@Override
+    	public long getLastModified(HttpServletRequest request, Object handler) {
+    		if (handler instanceof LastModified) {
+    			return ((LastModified) handler).getLastModified(request);
+    		}
+    		return -1L;
+    	}
+
+    }
+
+    可以看到这个Adapter也非常简单，是用来使用实现了Controller接口处理器干活的，干活的方式是直接调用处理器的handleRequest方法。
+    选择那个HandlerAdapter的过程再getHandlerAdapter方法中，它的逻辑是遍历所有的Adapter，然后检查那个可以处理当前的Handler，
+找到第一个可以处理当前handler的Adapter后就停止查找并将其放回。
+    既然需要挨个检查，那就需要有一个顺序，这里顺序同样是通过order属性来设置的。getHandlerAdapter的方法代码如下：
+    ／／org.springframework.web.servlet.DispatcherServlet
+    protected HandlerAdapter getHandlerAdapter(Object handler) throws ServletException {
+        for (HandlerAdapter ha : this.handlerAdapters) {
+            if (logger.isTraceEnabled()) {
+                logger.trace("Testing handler adapter [" + ha + "]");
+            }
+            if (ha.supports(handler)) {
+                return ha;
+            }
+        }
+        throw new ServletException("No adapter for handler [" + handler +
+                "]: The DispatcherServlet configuration needs to include a HandlerAdapter that supports this handler");
+    }
+
+    HandlerAdapter需要注册到SpringMVC容器里，注册方法和HandlerMapping一样，只要配置一个Bean就可以了。Handler是从HandlerMapping返回的。
+
