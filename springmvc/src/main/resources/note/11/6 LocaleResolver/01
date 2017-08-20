@@ -1,0 +1,54 @@
+LocaleResolver
+
+
+    解析视图需要两个参数：一个是视图名，另一个是locale。视图名是处理器放回的（或者是用RequestToViewNameTranslator解析的默认视图名），
+Locale是从哪里来的呢？这就是LocaleResolver要做的事。
+
+    LocaleResolver用于从Request中解析出Locale。Locale在前面已经介绍过，就是zh-cn之类，表示一个区域。有了这个就可以对不同区域的用户显示
+不同的结果，这就是i18n（国际化）的基本原理，LocaleResolver是i8n的基础。LocaleResolver的接口定义如下：
+    //org.springframework.web.servlet.LocaleResolver;
+    public interface LocaleResolver {
+
+    	Locale resolveLocale(HttpServletRequest request);
+    	void setLocale(HttpServletRequest request, HttpServletResponse response, Locale locale);
+    }
+
+    接口定义非常简单，只有2个方法，分别表示：从Request解析出Locale和特定的Locale设置给某个Request。在之前介绍过doService方法时说过，容器
+会将LocaleResolver设置到 request的attribute中，代码如下：
+    request.setAttribute(LOCALE_RESOLVER_ATTRIBUTE,this.localeResolver);
+    这让我们在需要Locale的时候，直接从request中拿到LocaleResolver，然后解析出Locale。
+
+    SpringMVC中主要在两个地方用到Locale：
+     01 ViewResolver解析视图的时候；
+     02 使用到国际化资源或者主题的时候。
+
+    ViewResolver在前面已将讲过。
+    国际化资源和主题主要使用RequestContext的getMessage和getThemeMessage方法。<Spring:message=".."/>标签内部其实就是使用的RequestContext，
+只不过没有直接调用getMessage，而是先调了getMessageResource然后又在内部调用了getMessage，代码详见org.springframework.web.servlet.tags.
+messageTag。
+
+    LocaleResolver的作用，我们已经清楚了。 不过有时候需要提供人为设置的区域功能，比如很多网站可以选择显示什么语言，这就需要提供人为修改Locale
+的机制。在SpringMVC中非常简单，只需要调用LocaleResolver中的setLocale方法即可。可是在哪里调用呢？我们可以写一个Controller来专门修改Locale，
+不过那样使用起来比较麻烦，返回的视图不容易确定，总不能说以切换语言就跳转到首页吧！即使将原来的地址通过参数传入也会有问题，比如，原来是动态页面，那
+么值传递地址就会有问题。如果能在正常请求的同时对Locale做修改就好了，而且每个请求都要可以修改！熟悉SpringMVC的读者肯定已经想到了Interceptor，是的
+使用Interceptor就可以做到这一点。幸运的是SpringMVC已经写好了，我们只需要配置进去就可以了，这就是 org.springframework.web.servlet.i18n.
+LocaleChangeInterceptor,配置方法如下：
+    <mvc:interceptors>
+        <mvc:interceptor>
+            <mvc:mapping path="/*" />
+            <bean class="org.springframework.web.servlet.i18n.LocaleChangeInterceptor"/>
+        </mvc:interceptor>
+    </mvc:interceptors>
+
+这样就可以通过locale的参数来修改Locale了，比如
+    http://localhost:8080?locale=zh_CN
+    http://localhost:8080?locale=en
+
+这里的"locale"也可以通过paramName设置为别的名称，比如设置为"lang"。
+    <mvc:interceptors>
+        <mvc:interceptor>
+            <mvc:mapping path="/*" />
+            <bean class="org.springframework.web.servlet.i18n.LocaleChangeInterceptor" p:paramName="lang"/>
+        </mvc:interceptor>
+    </mvc:interceptors>
+
