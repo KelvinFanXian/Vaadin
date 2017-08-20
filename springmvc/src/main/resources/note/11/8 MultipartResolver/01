@@ -1,0 +1,15 @@
+MultipartResolver
+
+    MultipartResolver用于处理上传请求，处理方法是将普通的request包装成MultipartServletRequest，后者可以直接调用getFile方法获取到File，
+如果上传多个文件，还可以调用getFileMap得到FileName-->File结构的Map，这样就是的上传请求的处理变得非常简单。当然，这里做的其实是锦上添花的事情，
+如果上传的请求不用MultipartResolver封装成MultipartServletRequest,直接用原来的Request也是可以的，所以在spirngMVC中此组件没有提供默认值。
+    MultipartResolver定义如下：
+    //org.springframework.web.multipart.MultipartResolver;
+    public interface MultipartResolver {
+        boolean isMultipart(HttpServletRequest var1);
+        MultipartHttpServletRequest resolveMultipart(HttpServletRequest var1) throws MultipartException;
+        void cleanupMultipart(MultipartHttpServletRequest var1);
+    }
+
+    这里一共有三个方法，作用分别是判断是不是上传请求，将request包装成MultipartHttpServletRequest,处理完后清理上传过程中产生的临时资源。
+对上传请求可以简单的判断是不是multipart/form-data类型。
