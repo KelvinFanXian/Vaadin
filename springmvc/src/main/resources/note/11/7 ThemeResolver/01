@@ -1,0 +1,106 @@
+ThemeResolver
+
+    ThemeResolver从名字就可以看出是解析主题用的。ThemeResolver接口定义如下：
+    //org.springframework.web.servlet.ThemeResolver;
+    public interface ThemeResolver {
+
+    	String resolveThemeName(HttpServletRequest request);
+    	void setThemeName(HttpServletRequest request, HttpServletResponse response, String themeName);
+    }
+
+    不同的主题其实就是换了一套图片、显示效果以及样式等。SpringMVC中一套主题对应一个properties 文件，里面存放着跟当前主题相关的所有资源，如
+图片、css样式等。例如：
+    #theme.properties
+    logo.pic=/images/default/logo.jpg
+    logo.word=kelvin
+    style=/css/default/style.css
+
+    将上面的文件命名为theme.properties,放到class下面就可以在页面中使用了，如果在jsp页面中，使用<spring:theme code="logo.word"/>就可以
+得到kelvin了（当然，需要在文件开头引入spring自己的标签库<%@ taglib prefix="spring" uri="http://www.springframework.org/tags"%> ）。
+现在所用的主题名就叫theme，主题名也就是文件名，所以创建主题非常简单，只需要准备好资源，然后新建一个以主题名为文件名的properties文件并将资源设置
+进去就可以了。另外，SpringMVC的主题也支持国际化，也就是说同一个主题不同的区域也可以显示不同的风格，比如，可以定义一下主题文件：
+
+    theme.properties
+    theme_zh_CN.properties
+    theme_en_US.properties
+    ...
+
+    这样即使使用同样的theme主题，不同的区域也会调用不同主题文件里的资源进行显示。
+    SpringMVC中跟主题有关的类主要有ThemeResolver、ThemeSource和Theme。从上面的接口可以看出，ThemeResolver的作用是从request中解析出主题名，
+ThemeSource则是根据主题名找到具体的主题；Theme是ThemeSource找到的一个具体主题，可以通过它获取主题里面具体的资源。获取主题的资源依然是在
+RequestContext中，代码如下：
+
+    //org.springframework.web.servlet.support.RequestContext
+    public String getThemeMessage(String code, Object[] args, String defaultMessage) {
+        return getTheme().getMessageSource().getMessage(code, args, defaultMessage, this.locale);
+    }
+    public Theme getTheme() {
+        if (this.theme == null) {
+            // Lazily determine theme to use for this RequestContext.
+            this.theme = RequestContextUtils.getTheme(this.request);
+            if (this.theme == null) {
+                // No ThemeResolver and ThemeSource available -> try fallback.
+                this.theme = getFallbackTheme();
+            }
+        }
+        return this.theme;
+    }
+
+    可以看到这里首先通过RequestContextUtils获取到Theme，然后获取对应的资源，再看一下ReqeustContextUtils是怎么获取Theme的：
+    //org.springframework.web.servlet.support.RequestContextUtils;
+    public static Theme getTheme(HttpServletRequest request) {
+        ThemeResolver themeResolver = getThemeResolver(request);
+        ThemeSource themeSource = getThemeSource(request);
+        if (themeResolver != null && themeSource != null) {
+            String themeName = themeResolver.resolveThemeName(request);
+            return themeSource.getTheme(themeName);
+        }
+        else {
+            return null;
+        }
+    }
+
+    从这里可以清楚的看到ThemeResolver和ThemeSource的作用。ThemeResolver的默认实现是org.springframework.web.servlet.theme.FixedThemeResolver,
+这里边使用的默认主题名就叫"theme"，这也就是前面使用theme主题时不用配置也可以使用的原因。从DispatcherServlet中可以看到ThemeResolver默认
+使用的是WebApplicationContext。
+
+    在SpringMVC容器创建时介绍过WebApplicationContext是在FrameworkServlet中创建的，默认使用的是XmlWebApplicationContext，其父类是
+AbstractRefreshableWebApplicationContext，这个类实现了ThemeSource接口，其实现方法是在内部封装了一个ThemeSource属性，然后将具体工作
+交给它去干。
+
+    现在我们就把整个原理弄明白了：
+        主题是通过一系列资源来具体体现的，要得到一个主题的资源，首先要得到资源的名称，这个是ThemeResolver的工作，然后用资源名称找到主题（
+可以理解为一个配置文件），这时ThemeSource的工作，最后使用主题获取里面的资源就可以了。ThemeResolver默认使用的FixedThemeResolver，ThemeSource
+默认使用的是WebApplicationContext（AbstractRefreshableWebApplicationContext里面的ThemeSource），不过我们也可以自己来配置，例如：
+    <bean id="themeSource" class="org.springframework.ui.context.support.ResourceBundleThemeSource"
+        p:basenamePrefix="com.kelvin.themes."/>
+
+    <bean id="themeResolver" class="org.springframework.web.servlet.theme.CookieThemeResolver"
+        p:defaultThemeName="default"/>
+
+    这里不仅配置ThemeResolver和ThemeResource,而且还配置了默认主题名为"default",以及配置文件的位置在com.kelvin.themes包下（注意配置是最后
+要有个"."）。
+    我们把主题是怎么回事就讲完了，下面再讲一下怎么切换主题，如果主题不能切换就失去了主题的意义，所以主题的切换非常重要。SpringMVC中主题的切换
+和Locale的切换使用相同的模式，也就是使用Interceptor。配置如下：
+    <mvc:interceptors>
+        <mvc:interceptor>
+            <mvc:mapping path="/*"/>
+            <bean class="org.springframework.web.servlet.theme.ThemeChangeInterceptor"
+                p:paramName="theme"/>
+        </mvc:interceptor>
+    </mvc:interceptors>
+    可以通过paramName设置修改主题的参数名，默认使用"theme"。下面的请求可以切换为summer主题：
+
+    http://localhost:8080?theme=summer
+
+
+
+
+
+
+
+
+
+
+
+
