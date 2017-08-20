@@ -1,0 +1,44 @@
+
+
+    //org.springframework.web.servlet.view.BeanNameViewResolver;
+    public class BeanNameViewResolver extends WebApplicationObjectSupport implements ViewResolver, Ordered {
+
+    	private int order = Integer.MAX_VALUE;  // default: same as non-Ordered
+
+
+    	public void setOrder(int order) {
+    		this.order = order;
+    	}
+
+    	@Override
+    	public int getOrder() {
+    		return this.order;
+    	}
+
+
+    	@Override
+    	public View resolveViewName(String viewName, Locale locale) throws BeansException {
+    		ApplicationContext context = getApplicationContext();
+    		if (!context.containsBean(viewName)) {
+    			if (logger.isDebugEnabled()) {
+    				logger.debug("No matching bean found for view name '" + viewName + "'");
+    			}
+    			// Allow for ViewResolver chaining...
+    			return null;
+    		}
+    		if (!context.isTypeMatch(viewName, View.class)) {
+    			if (logger.isDebugEnabled()) {
+    				logger.debug("Found matching bean for view name '" + viewName +
+    						"' - to be ignored since it does not implement View");
+    			}
+    			// Since we're looking into the general ApplicationContext here,
+    			// let's accept this as a non-match and allow for chaining as well...
+    			return null;
+    		}
+    		return context.getBean(viewName, View.class);
+    	}
+
+    }
+
+    可以看到其原理就是根据viewName从Spring容器中查找Bean，如果查找不到或者查找后不是View类型则返回null，否则返回容器中的bean。
+    ViewResolver的使用需要注册到Spring MVC的容器里，默认使用的是org.springframework.web.servlet.view.InternalResourceViewResolver.
