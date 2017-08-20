@@ -1,0 +1,26 @@
+RequestToViewNameTranslator
+
+    ViewResolver是根据ViewName查找View，但有点Handler处理完后并没有设置View也没有设置ViewName，这时就需要从request中获取viewName了，
+而如何从request获取viewName，就是RequestToViewNameTranslator要做的事情。RequestToViewNameTranslator接口定义如下：
+
+    //org.springframework.web.servlet.RequestToViewNameTranslator;
+    public interface RequestToViewNameTranslator {
+
+    	String getViewName(HttpServletRequest request) throws Exception;
+    }
+
+    其中只有一个getViewName方法，只要通过request获取到viewName就可以了。我们来定一个Translator，其判断如果是tudou的GET请求则返回"maidigua",
+否则返回"404"作为viewName。
+    public class MaiDiguaRequestToViewNameTranslator implements RequestToViewNameTranslator{
+        @Override
+        public String getViewName(HttpServletRequest request){
+            if(request.getURI().toString().startsWith("/tudou")&&request.getMethod().equalsIgnoreCase("GET"))
+                return "maidigua";
+            else
+                return "404";
+        }
+    }
+
+    当然，这只是一个例子，实际使用时应该设置规则而不是将具体请求与ViewName的对应关系硬编码到程序里面，那样才可以具备更好的通用性。
+
+    RequestToViewNameTranslator在SpringMVC容器里只可以配置一个，所以所有request到ViewName的转换规则都要在一个Translator里面全部实现。
