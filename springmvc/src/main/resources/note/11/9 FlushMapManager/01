@@ -1,0 +1,23 @@
+FlushMapManager
+
+    FlashMap，主要用在redirect中传递参数。  而FlashMapManager使用来管理FlashMap的，定义如下：
+
+    //org.springframework.web.servlet.FlashMapManager
+    public interface FlashMapManager {
+
+        FlashMap retrieveAndUpdate(HttpServletRequest request, HttpServletResponse response);
+        void saveOutputFlashMap(FlashMap flashMap, HttpServletRequest request, HttpServletResponse response);
+    }
+
+    retrieveAndUpdate方法用户恢复参数，并将恢复过的和超时的参数从保持介质中删除，saveOutPutFlashMap用于将参数保存起来。
+    默认实现是org.springframework.web.servlet.support.SessionFlashMapManager,它是将参数保存到session中。
+
+    整个redirect的参数通过FlashMap传递的过程分三步：
+     01 在处理器中将需要传递的参数设置到outputFlashMap中，设置方法在分析DispatcherServlet的时候已经介绍过了，可以直接使用request
+ .getAttribute(DispatcherServlet.OUTPUT_FLASH_MAP_ATTRIBUTE)拿到outputFlashMap，然后将参数put进去，也可以将需要传递的参数设置到
+ 处理器的RedirectAttribute类型的参数中，当处理器处理完请求时，如果是redirect类型的返回值RequestMappingHandlerAdapter会将其设置到
+ outputFlashMap中。
+     02 在RedirectView的renderMergedOutputModel方法中调用FlashMapManager的SaveOutputFlashMap方法，将outputFlashMap中的参数设置
+ 到Session中。
+     03 请求redirect后DispatcherServlet的doService会调用FlashMapManager的retrieveAndUpdate方法从Session中获取inputFlashMap并
+ 设置到Request的属性中备用，同时从Session中删除。
