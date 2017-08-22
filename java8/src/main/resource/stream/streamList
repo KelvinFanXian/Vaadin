@@ -1,0 +1,48 @@
+
+
+    清单 1. Java 7 的排序、取值实现
+    List<Transaction> groceryTransactions = new Arraylist<>();
+    for(Transaction t: transactions){
+     if(t.getType() == Transaction.GROCERY){
+        groceryTransactions.add(t);
+     }
+    }
+    Collections.sort(groceryTransactions, new Comparator(){
+         public int compare(Transaction t1, Transaction t2){
+         return t2.getValue().compareTo(t1.getValue());
+         }
+    });
+    List<Integer> transactionIds = new ArrayList<>();
+    for(Transaction t: groceryTransactions){
+         transactionsIds.add(t.getId());
+    }
+
+    清单 2. Java 8 的排序、取值实现
+    List<Integer> transactionsIds = transactions.parallelStream().
+     filter(t -> t.getType() == Transaction.GROCERY).
+     sorted(comparing(Transaction::getValue).reversed()).
+     map(Transaction::getId).
+     collect(toList());
+
+    清单 3. 一个流操作的示例
+    int sum = widgets.stream()
+    .filter(w -> w.getColor() == RED)
+     .mapToInt(w -> w.getWeight())
+     .sum();
+
+    清单 4. 构造流的几种常见方法
+    // 1. Individual values
+    Stream stream = Stream.of("a", "b", "c");
+    // 2. Arrays
+    String [] strArray = new String[] {"a", "b", "c"};
+    stream = Stream.of(strArray);
+    stream = Arrays.stream(strArray);
+    // 3. Collections
+    List<String> list = Arrays.asList(strArray);
+    stream = list.stream();
+
+    清单 5. 数值流的构造
+    IntStream.of(new int[]{1, 2, 3}).forEach(System.out::println);
+    IntStream.range(1, 3).forEach(System.out::println);
+    IntStream.rangeClosed(1, 3).forEach(System.out::println);
+
