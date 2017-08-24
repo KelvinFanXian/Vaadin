@@ -216,6 +216,31 @@
     System.out.println(longest);
 
 
+    清单 20. 找出全文的单词，转小写，并排序
+    List<String> words = br.lines().
+     flatMap(line -> Stream.of(line.split(" "))).
+     filter(word -> word.length() > 0).
+     map(String::toLowerCase).
+     distinct().
+     sorted().
+     collect(Collectors.toList());
+    br.close();
+    System.out.println(words)
+
+
+    清单 21. 使用 Match
+    List<Person> persons = new ArrayList();
+    persons.add(new Person(1, "name" + 1, 10));
+    persons.add(new Person(2, "name" + 2, 21));
+    persons.add(new Person(3, "name" + 3, 34));
+    persons.add(new Person(4, "name" + 4, 6));
+    persons.add(new Person(5, "name" + 5, 55));
+    boolean isAllAdult = persons.stream().
+     allMatch(p -> p.getAge() > 18);
+    System.out.println("All are adult? " + isAllAdult);
+    boolean isThereAnyChild = persons.stream().
+     anyMatch(p -> p.getAge() < 12);
+    System.out.println("Any child? " + isThereAnyChild);
 
 
 
