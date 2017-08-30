@@ -1,0 +1,5 @@
+
+01 list to map : more>>https://zacard.net/2016/03/17/java8-list-to-map/
+    accounts.stream().collect(Collectors.toMap(Account::getId, Account::getUsername));
+
+
