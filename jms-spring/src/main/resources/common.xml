@@ -21,4 +21,8 @@
         <constructor-arg value="queue"/>
     </bean>
 
+    <!--一个主题的目的地，发布订阅模式-->
+    <bean  id="topicDestination" class="org.apache.activemq.command.ActiveMQTopic">
+        <constructor-arg value="topic"/>
+    </bean>
 </beans>
